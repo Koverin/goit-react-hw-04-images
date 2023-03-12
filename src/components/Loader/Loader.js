@@ -1,6 +1,6 @@
 import { TailSpin } from 'react-loader-spinner';
 
-export const Loader = () => {
+export function Loader() {
   return (
     <TailSpin
       height={150}
@@ -15,4 +15,4 @@ export const Loader = () => {
       strokeWidthSecondary={4}
     />
   );
-};
+}

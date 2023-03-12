@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 import { List } from './ImageGallery.styled';
 
-export const ImageGallery = ({ images, onClick }) => {
+export function ImageGallery({ images, onClick }) {
   return (
     <div>
       <List>
@@ -20,7 +20,7 @@ export const ImageGallery = ({ images, onClick }) => {
       </List>
     </div>
   );
-};
+}
 
 ImageGallery.propTypes = {
   images: PropTypes.arrayOf(

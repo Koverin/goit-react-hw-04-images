@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { apiServis, PER_PAGE } from '../../api/Api';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -10,117 +10,96 @@ import { Loader } from 'components/Loader/Loader';
 import { Modal } from 'components/Modal/Modal';
 import { Error } from 'components/Error/Error';
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    images: [],
-    isLoading: false,
-    error: null,
-    showModal: false,
-    largeImage: '',
-    perPageImg: null,
-  };
+export function App() {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImage, setLargeImage] = useState('');
+  const [perPageImg, setPerPageImg] = useState(null);
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.query !== this.state.query) {
-      this.searchImages();
+  useEffect(() => {
+    if (!query) {
+      return;
     }
 
-    this.scrollPage();
-  }
+    const imagesArray = data => {
+      return data.map(({ id, largeImageURL, tags, webformatURL }) => {
+        return { id, largeImageURL, tags, webformatURL };
+      });
+    };
 
-  handleSubmit = query => {
-    this.setState(() => {
-      return { query: query, page: 1, images: [] };
-    });
-  };
+    const searchImages = async () => {
+      try {
+        setIsLoading(true);
+        const { hits, totalHits } = await apiServis(page, query);
+        if (totalHits === 0) {
+          toast.error(`No results were found for ${query}`);
+          setIsLoading(false);
+          setPerPageImg(null);
+          return;
+        }
 
-  onLoadMore = () => {
-    this.searchImages();
-  };
+        const images = imagesArray(hits);
 
-  searchImages = async () => {
-    try {
-      this.setState({ isLoading: true });
-      const { query, page } = this.state;
-      const { hits, totalHits } = await apiServis(page, query);
-      if (totalHits === 0) {
-        toast.error(`No results were found for ${query}`);
-        this.setState({ isLoading: false, perPageImg: null });
-        return;
+        setImages(prevState => {
+          return [...prevState, ...images];
+        });
+        setPerPageImg(hits.length);
+      } catch (error) {
+        console.log(error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
       }
+    };
+    searchImages();
+  }, [page, query]);
 
-      const images = this.imagesArray(hits);
-
-      this.setState(prevState => {
-        return {
-          images: [...prevState.images, ...images],
-          perPageImg: hits.length,
-          page: prevState.page + 1,
-        };
-      });
-    } catch (error) {
-      console.log(error);
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ isLoading: false });
-    }
+  const toggleModal = () => {
+    setShowModal(showModal => !showModal);
   };
 
-  imagesArray = data => {
-    return data.map(({ id, largeImageURL, tags, webformatURL }) => {
-      return { id, largeImageURL, tags, webformatURL };
-    });
+  const onOpenModal = largeImage => {
+    setLargeImage(largeImage);
+    toggleModal();
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const formSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
-  onOpenModal = largeImage => {
-    this.setState({ largeImage }, () => {
-      this.toggleModal();
-    });
+  const loadMoreImg = () => {
+    setPage(page + 1);
   };
 
-  scrollPage = () => {
-    if (this.state.page > 2) {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  };
-  render() {
-    const { images, isLoading, perPageImg, error, showModal, largeImage } =
-      this.state;
-    return (
-      <Box>
-        <Searchbar onSubmit={this.handleSubmit} />
+  return (
+    <Box>
+      <Searchbar onSubmit={formSubmit} />
 
-        {error && <Error texterror={error} />}
+      {error && <Error texterror={error} />}
 
-        {images.length > 0 && !error && (
-          <>
-            <ImageGallery images={images} onClick={this.onOpenModal} />
-            {perPageImg && perPageImg < PER_PAGE && <p>No more pictures</p>}
-          </>
-        )}
+      {images.length > 0 && !error && (
+        <>
+          <ImageGallery images={images} onClick={onOpenModal} />
+          {perPageImg && perPageImg < PER_PAGE && <p>No more pictures</p>}
+        </>
+      )}
 
-        {showModal && (
-          <Modal onClose={this.toggleModal}>
-            <img src={largeImage} alt="Big images" />
-          </Modal>
-        )}
-        {perPageImg === PER_PAGE && !isLoading && (
-          <Button onClick={this.onLoadMore} />
-        )}
-        {isLoading && <Loader />}
-        <ToastContainer autoClose={3000} />
-      </Box>
-    );
-  }
+      {showModal && (
+        <Modal onClose={toggleModal}>
+          <img src={largeImage} alt="Big images" />
+        </Modal>
+      )}
+      {perPageImg === PER_PAGE && !isLoading && (
+        <Button onClick={loadMoreImg} />
+      )}
+      {isLoading && <Loader />}
+      <ToastContainer autoClose={3000} />
+    </Box>
+  );
 }

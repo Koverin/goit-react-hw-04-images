@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { Item, Img } from './ImageGalleryItem.styled';
 
-export const ImageGalleryItem = ({ tags, preview, largeImage, onClick }) => {
+export function ImageGalleryItem({ tags, preview, largeImage, onClick }) {
   return (
     <Item>
       <Img
@@ -13,7 +13,7 @@ export const ImageGalleryItem = ({ tags, preview, largeImage, onClick }) => {
       />
     </Item>
   );
-};
+}
 
 ImageGalleryItem.propTypes = {
   largeImage: PropTypes.string.isRequired,
